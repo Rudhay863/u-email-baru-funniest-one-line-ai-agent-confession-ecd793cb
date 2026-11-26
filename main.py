@@ -21,12 +21,22 @@ OUTPUT_PATH = "/output/entry.txt"
 
 def main() -> None:
     line = CONFESSION.strip()
-    assert "\n" not in line, "entry must be a single line"
-    assert 1 <= len(line) <= 200, "entry must be 1-200 characters"
+    # Explicit checks, not assert: asserts are stripped under `python3 -O`,
+    # so the single-line / length rules must hold in any run mode.
+    if "\n" in line:
+        raise ValueError("entry must be a single line")
+    if not 1 <= len(line) <= 200:
+        raise ValueError("entry must be 1-200 characters")
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     # No trailing newline: the file is exactly one line of text.
     with open(OUTPUT_PATH, "w", encoding="utf-8", newline="") as f:
         f.write(line)
+    # Verify the write: read the file back and confirm it is exactly the
+    # confession we meant to submit, nothing more and nothing less.
+    with open(OUTPUT_PATH, encoding="utf-8", newline="") as f:
+        written = f.read()
+    if written != line:
+        raise RuntimeError(f"verification failed: {OUTPUT_PATH!r} does not match the entry")
     print(f"Wrote {len(line)} characters to {OUTPUT_PATH}")
 
 
